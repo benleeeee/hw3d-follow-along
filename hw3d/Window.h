@@ -4,6 +4,8 @@
 #include "Keyboard.h"
 #include "Mouse.h"
 #include <optional> //c++ 17 lets you return optional types, e.g. return an int OR return nothing
+#include <memory>
+#include "Graphics.h"
 
 class Window
 {
@@ -45,6 +47,7 @@ public:
 	Window& operator=(const Window&) = delete; //ensure no = operator can be used
 	void SetTitle(const std::string& title);
 	static std::optional<int> ProcessMessage(); //Process messages for all windows
+	Graphics& Gfx();
 private:
 	//These functions are so we can use HandleMsg() as a member function to handle win messages
 	//Without this workout you cannot call HandleMsg directly as a window procedure
@@ -59,6 +62,7 @@ private:
 	int width;
 	int height;
 	HWND hWnd;	//WinAPI window class
+	std::unique_ptr<Graphics> pGfx; //bc unique ptr when Window is destroyed pGfx is guaranteed destroyed
 };
 
 

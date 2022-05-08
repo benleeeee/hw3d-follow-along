@@ -82,8 +82,10 @@ Window::Window(int width, int height, const char * name)
 	{	
 		throw CHWND_LAST_EXCEPT();
 	}
-	//Show window
+	//newly created windows start off as hidden
 	ShowWindow(hWnd, SW_SHOWDEFAULT);
+	//Create graphics object
+	pGfx = std::make_unique<Graphics>(hWnd);
 }
 
 Window::~Window()
@@ -261,6 +263,11 @@ std::optional<int> Window::ProcessMessage()
 
 	//Return empty optional when not quitting app
 	return {};	
+}
+
+Graphics & Window::Gfx()
+{
+	return *pGfx;
 }
 
 Window::Exception::Exception(int line, const char * file, HRESULT hr) noexcept
