@@ -1,7 +1,7 @@
 #include "CleanWin.h"
 #include "WindowsMessageMap.h"
 #include <sstream>
-#include "Window.h"
+#include "App.h"
 
 #if (_MSC_VER >= 1915)
 #define no_init_all deprecated
@@ -69,72 +69,9 @@ int CALLBACK WinMain(
 	int nCmdShow)
 {
 	try
-	{
-		//Create Window obj to handle creation of window neatly, when this obj is destroyed at end of WinMain()
-		//the window instance will also be destroyed
-		Window myWindow(192 * 4, 108 * 4, "My Window");
-
-		//Event-based program, messages are queued up and dealt with in order to update the app, there is no constant update loop	
-
-		//Message pump
-		MSG msg;
-		BOOL gResult;
-		while ((gResult = GetMessage(&msg, nullptr, 0, 0)) > 0) //as long as the return value is >0 then keep processing. 0 = close, -1 = error	
-		{
-			//Application needs to translate the message and send back to win32 app
-			TranslateMessage(&msg);
-
-			//Pass message along to Window Proc (Procedure) which informs how to handle each message
-			DispatchMessage(&msg);
-
-			//
-			static int upcount = 0;
-			while( !myWindow.mouse.IsEmpty() )
-			{
-				const auto e = myWindow.mouse.Read();
-				switch (e.GetType())
-				{
-				case Mouse::Event::Type::Leave:
-					myWindow.SetTitle("Gone!");
-					break;
-				case Mouse::Event::Type::Move:
-				{
-					std::ostringstream oss;
-					oss << "Mouse Position: (" << e.GetPosX() << "," << e.GetPosY() << ")";
-					myWindow.SetTitle(oss.str());
-					break;
-				}
-				case Mouse::Event::Type::WheelUp:
-				{
-					upcount++;
-					std::ostringstream oss;
-					oss << "Mouse scrolled up: " << upcount;
-					myWindow.SetTitle(oss.str());
-					break;
-				}
-				case Mouse::Event::Type::WheelDown:
-				{
-					upcount--;
-					std::ostringstream oss;
-					oss << "Mouse scrolled down: " << upcount;
-					myWindow.SetTitle(oss.str());
-					break;
-				}
-				}
-			}
-		}
-
-		if (gResult == -1)
-		{
-			return -1;
-		}
-
-
-		return msg.wParam;	//.wParam will be set to the value passed into PostQuitMessage which must be called in order to close program
-							//PostQuitMessage is called by the custom winProc when closing the app.
-							//lParam and wParam are set differently based on the context of the message.
-							//Google WM_QUIT and look at docs.microsoft documentations to find what these are set to
-							//In this instance the WM_QUIT sets wParam = exit code given, and lParam is not used
+	{		
+		//Create app that contains window & game logic
+		return App{}.Go();
 	}
 	catch (const ChiliException& e)
 	{

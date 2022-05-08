@@ -241,6 +241,28 @@ LRESULT Window::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noe
 	return DefWindowProc(hWnd, msg, wParam, lParam);
 }
 
+std::optional<int> Window::ProcessMessage()
+{
+	MSG msg;
+	//While queue has messages, remove and dispatch them (but do not block on empty queue)
+	while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+	{
+		//Check for quit because peekmessage does not signal this via return val
+		if (msg.message == WM_QUIT)
+		{
+			//Return optional wrapping int (arg to PostQuitMessage is in wParam) signals quit
+			return (int)msg.wParam;
+		}
+
+		//TranslateMessage will post auxilliary WM_CHAR message from key msgs
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+
+	//Return empty optional when not quitting app
+	return {};	
+}
+
 Window::Exception::Exception(int line, const char * file, HRESULT hr) noexcept
 	:
 	ChiliException (line, file),	//Invoke ChiliException constructor in initialiser list for line/file param

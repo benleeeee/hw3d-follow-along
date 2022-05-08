@@ -3,6 +3,7 @@
 #include "ChiliException.h"
 #include "Keyboard.h"
 #include "Mouse.h"
+#include <optional> //c++ 17 lets you return optional types, e.g. return an int OR return nothing
 
 class Window
 {
@@ -43,6 +44,7 @@ public:
 	Window(const Window&) = delete; //ensure no copy constructor can be called
 	Window& operator=(const Window&) = delete; //ensure no = operator can be used
 	void SetTitle(const std::string& title);
+	static std::optional<int> ProcessMessage(); //Process messages for all windows
 private:
 	//These functions are so we can use HandleMsg() as a member function to handle win messages
 	//Without this workout you cannot call HandleMsg directly as a window procedure
