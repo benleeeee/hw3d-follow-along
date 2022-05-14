@@ -2,6 +2,8 @@
 #include "dxerr.h"
 #include <sstream>
 
+namespace wrl = Microsoft::WRL;
+
 //Set the linker settings for d3d11 library, necessary to link to actual library functions
 #pragma comment(lib,"d3d11.lib")
 
@@ -55,49 +57,26 @@ Graphics::Graphics(HWND hWnd)
 
 	//Create device, swap chain and rendering context in one
 	GFX_THROW_INFO( D3D11CreateDeviceAndSwapChain(
-		nullptr,	//choose default adapter
+		nullptr,			//choose default adapter
 		D3D_DRIVER_TYPE_HARDWARE, //Use hardware driver 
-		nullptr,	//
-		swapCreateFlags, // Create device on debug layer so we get debug info in VS error log
-		nullptr,	//no feature levels specified GPU needs to support
-		0,			//
+		nullptr,			//
+		swapCreateFlags,	// Create device on debug layer so we get debug info in VS error log
+		nullptr,			//no feature levels specified GPU needs to support
+		0,					//
 		D3D11_SDK_VERSION,	//sdk version targetting (which D3D needs to be installed
-		&sd,		//descriptor structure for configuring swap chain
-		&pSwap,		//fills in ptr to swap chain
-		&pDevice,	//fills in ptr to device
-		nullptr,	//
-		&pContext	//fills in ptr to context
+		&sd,				//descriptor structure for configuring swap chain
+		pSwap.ReleaseAndGetAddressOf(),		//fills in ptr to swap chain
+		pDevice.ReleaseAndGetAddressOf(),	//fills in ptr to device
+		nullptr,							//
+		pContext.ReleaseAndGetAddressOf()	//fills in ptr to context
 	) );
 
 	//Gain access to texture subresource in swap chain (backbuffer)
-	ID3D11Resource* pBackBuffer = nullptr;
-	GFX_THROW_INFO( pSwap->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&pBackBuffer)) );
-	GFX_THROW_INFO( pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &pTarget) );
-	
-	//BackBuff resource only needed to fill pTarget, so now we can release the handle
-	pBackBuffer->Release();
+	Microsoft::WRL::ComPtr<ID3D11Resource> pBackBuffer;
+	GFX_THROW_INFO( pSwap->GetBuffer(0, __uuidof(ID3D11Texture2D), &pBackBuffer) );
+	GFX_THROW_INFO( pDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &pTarget) );		
 }
 
-Graphics::~Graphics()
-{
-	//RAII (Resource acquisition is initialised)
-	if (pTarget != nullptr)
-	{
-		delete(pTarget);
-	}
-	if (pContext != nullptr)
-	{
-		delete(pContext);
-	}
-	if (pSwap != nullptr)
-	{
-		delete(pSwap);
-	}
-	if (pDevice != nullptr)
-	{
-		delete(pDevice);
-	}			
-}
 
 void Graphics::EndFrame()
 {
@@ -123,7 +102,7 @@ void Graphics::ClearBuffer(float red, float green, float blue) noexcept
 {
 	const float colour[] = { red, green, blue, 1.0f };
 	//Clear render target (backbuffer) into an RGB colour using Context which controls rendering
-	pContext->ClearRenderTargetView(pTarget, colour);
+	pContext->ClearRenderTargetView(pTarget.Get(), colour);
 }
 
 //####################################
