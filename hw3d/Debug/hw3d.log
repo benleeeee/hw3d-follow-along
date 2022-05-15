@@ -1,6 +1,2 @@
-﻿  App.cpp
-  DxgiInfoManager.cpp
-  Graphics.cpp
-  WinMain.cpp
-  Window.cpp
+﻿  Graphics.cpp
   hw3d.vcxproj -> C:\Users\Ben Lee\repos\hw3d follow along\Debug\hw3d.exe

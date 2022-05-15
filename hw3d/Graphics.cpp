@@ -1,11 +1,13 @@
 #include "Graphics.h"
 #include "dxerr.h"
 #include <sstream>
+#include <d3dcompiler.h>
 
 namespace wrl = Microsoft::WRL;
 
 //Set the linker settings for d3d11 library, necessary to link to actual library functions
 #pragma comment(lib,"d3d11.lib")
+#pragma comment(lib,"D3DCompiler.lib") //for shader loading function
 
 //### Macros for easier typing to throw exceptions ###
 // graphics exception checking/throwing macros (some with dxgi infos)
@@ -17,10 +19,12 @@ namespace wrl = Microsoft::WRL;
 #define GFX_THROW_INFO(hrcall) infoManager.Set(); if( FAILED( hr = (hrcall) ) ) throw GFX_EXCEPT(hr)
 //creates specialised deviceRemovedException, which can be thrown manually
 #define GFX_DEVICE_REMOVED_EXCEPT(hr) Graphics::DeviceRemovedException( __LINE__,__FILE__,(hr),infoManager.GetMessages() )
+#define GFX_THROW_INFO_ONLY(call) infoManager.Set(); (call); {auto v = infoManager.GetMessages(); if(!v.empty()) {throw Graphics::InfoException( __LINE__,__FILE__,v);}}
 #else
 #define GFX_EXCEPT(hr) Graphics::HrException( __LINE__,__FILE__,(hr) )
 #define GFX_THROW_INFO(hrcall) GFX_THROW_NOINFO(hrcall)
 #define GFX_DEVICE_REMOVED_EXCEPT(hr) Graphics::DeviceRemovedException( __LINE__,__FILE__,(hr) )
+#define GFX_THROW_INFO_ONLY(call) (call)
 #endif
 
 
@@ -72,7 +76,7 @@ Graphics::Graphics(HWND hWnd)
 	) );
 
 	//Gain access to texture subresource in swap chain (backbuffer)
-	Microsoft::WRL::ComPtr<ID3D11Resource> pBackBuffer;
+	Microsoft::WRL::ComPtr<ID3D11Resource> pBackBuffer; 
 	GFX_THROW_INFO( pSwap->GetBuffer(0, __uuidof(ID3D11Texture2D), &pBackBuffer) );
 	GFX_THROW_INFO( pDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &pTarget) );		
 }
@@ -103,6 +107,106 @@ void Graphics::ClearBuffer(float red, float green, float blue) noexcept
 	const float colour[] = { red, green, blue, 1.0f };
 	//Clear render target (backbuffer) into an RGB colour using Context which controls rendering
 	pContext->ClearRenderTargetView(pTarget.Get(), colour);
+}
+
+void Graphics::DrawTestTriangle()
+{
+	namespace wrl = Microsoft::WRL;
+	HRESULT hr;
+
+	struct Vertex
+	{
+		float x;
+		float y;
+	};
+	const Vertex vertices[] =
+	{
+		{ 0.0f, 0.5f },
+		{ 0.5f, -0.5f },
+		{ -0.5f, -0.5f }
+	};
+
+	//Create buffer description descriptor
+	D3D11_BUFFER_DESC desc = D3D11_BUFFER_DESC();
+	desc.BindFlags = D3D11_BIND_FLAG::D3D11_BIND_VERTEX_BUFFER;
+	desc.Usage = D3D11_USAGE::D3D11_USAGE_DEFAULT;
+	desc.CPUAccessFlags = 0u;
+	desc.MiscFlags = 0u;
+	desc.ByteWidth = sizeof(vertices);
+	desc.StructureByteStride = sizeof(Vertex);
+
+
+	//Create initial data
+	D3D11_SUBRESOURCE_DATA data = D3D11_SUBRESOURCE_DATA();
+	data.pSysMem = vertices; //does this not need &?
+	
+
+	//Create Buffer ComPtr	
+	wrl::ComPtr<ID3D11Buffer> pVBuff;
+	//Create Buffer ComObj and fill pVBuff w/ it
+	GFX_THROW_INFO(pDevice->CreateBuffer(&desc, &data, &pVBuff));
+	//Needed to configure binding of VBuff to pipeline below
+	const UINT stride = sizeof(Vertex);
+	const UINT offset = 0u;
+	//Bind buffer to pipeline
+	pContext->IASetVertexBuffers(0u, 1u, pVBuff.GetAddressOf(), &stride, &offset);
+
+	//Create pixel shader comobj
+	wrl::ComPtr<ID3D11PixelShader> pPixelShader;
+	wrl::ComPtr<ID3DBlob> pBlob; //bytecode file comObj
+	GFX_THROW_INFO(D3DReadFileToBlob(L"PixelShader.cso", &pBlob)); //simultaneously calls pBlob->release() in & opeartor
+	GFX_THROW_INFO(pDevice->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &pPixelShader));
+	//Bind pixel shader to pipeline
+	pContext->PSSetShader(pPixelShader.Get(), nullptr, 0u);
+	//Bind render target
+	pContext->OMSetRenderTargets(1u, pTarget.GetAddressOf(), nullptr);
+
+	//Create vertex shader comobj
+	wrl::ComPtr<ID3D11VertexShader> pVertexShader;
+	//Fill pBlob ptr with binaries read from Vertex Shader compiled file
+	GFX_THROW_INFO( D3DReadFileToBlob(L"VertexShader.cso", &pBlob) ); 
+	GFX_THROW_INFO( pDevice->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &pVertexShader) );	
+	//Bind vertex shader to pipeline
+	pContext->VSSetShader(pVertexShader.Get(), nullptr, 0u);		
+
+	//Configure viewport
+	D3D11_VIEWPORT vp;
+	vp.Width = 800;
+	vp.Height = 600;
+	vp.MinDepth = 0;
+	vp.MaxDepth = 1;
+	vp.TopLeftX = 0;
+	vp.TopLeftY = 0;
+	pContext->RSSetViewports(1u, &vp);
+
+	//Set primitive topology
+	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	//Create input layout object to define how our vertex struct interacts w/ pipeline
+	wrl::ComPtr<ID3D11InputLayout> pInputLayout;
+	//Use array of descriptors to allow multiple descriptions
+	const D3D11_INPUT_ELEMENT_DESC ied[] =
+	{		
+		{"Position",			//Semantic name
+		0,						//Semantic index
+		DXGI_FORMAT_R32G32_FLOAT, //Format (two 32bit floats for x,y)
+		0,						//Input slot
+		0,						//Aligned byte offset
+		D3D11_INPUT_PER_VERTEX_DATA, //Input slot class
+		0 },					//Instance data step rate
+	};	
+	GFX_THROW_INFO( pDevice->CreateInputLayout(
+		ied,
+		(UINT)std::size(ied),
+		pBlob->GetBufferPointer(),	//func wants shader bytecode for vertex shader so that
+		pBlob->GetBufferSize(),		//it can check input element desc against shader code
+		&pInputLayout)
+	);
+	//Bind inputLayout to pipeline
+	pContext->IASetInputLayout(pInputLayout.Get());
+
+	//DRAW!!!
+	GFX_THROW_INFO_ONLY( pContext->Draw((UINT)std::size(vertices), 0u) );
 }
 
 //####################################
@@ -173,6 +277,43 @@ std::string Graphics::HrException::GetErrorDescription() const noexcept
 }
 
 std::string Graphics::HrException::GetErrrorInfo() const noexcept
+{
+	return info;
+}
+
+Graphics::InfoException::InfoException(int line, const char * file, std::vector<std::string> infoMsgs) noexcept
+	:
+	Exception{ line, file }
+{
+	//Join all info messages with newlines into single string
+	for (const auto& m : infoMsgs)
+	{
+		info += m;
+		info.push_back('\n');
+	}
+	//Remove final newline if exists
+	if (!info.empty())
+	{
+		info.pop_back();
+	}
+}
+
+const char * Graphics::InfoException::what() const noexcept
+{
+	std::ostringstream oss;
+	oss << GetType() << std::endl
+		<< "\n[Error Info]\n" << GetErrorInfo() << std::endl << std::endl;
+	oss << GetOriginString();
+	whatBuffer = oss.str();
+	return whatBuffer.c_str();
+}
+
+const char * Graphics::InfoException::GetType() const noexcept
+{
+	return "Chili Graphics Info Exception";
+}
+
+std::string Graphics::InfoException::GetErrorInfo() const noexcept
 {
 	return info;
 }
