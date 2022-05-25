@@ -116,14 +116,32 @@ void Graphics::DrawTestTriangle()
 
 	struct Vertex
 	{
-		float x;
-		float y;
+		struct {
+			float x;
+			float y;
+		} pos;
+		struct {
+			unsigned char r;
+			unsigned char g;
+			unsigned char b;
+			unsigned char a;
+		} colour;
 	};
-	const Vertex vertices[] =
+	Vertex vertices[] =
 	{
-		{ 0.0f, 0.5f },
-		{ 0.5f, -0.5f },
-		{ -0.5f, -0.5f }
+		{ 0.0f, 0.5f, 255, 0, 0, 0 },
+		{ 0.5f, -0.5f, 0, 255, 0, 0 },
+		{ -0.5f, -0.5f, 0, 0, 255, 0 },
+		{ -0.3f, 0.3f, 0, 255, 0, 0 },
+		{ 0.3f, 0.3f, 0,0, 255, 0 },
+		{ 0.0f, -0.8f, 255, 0, 0, 0 },
+	};
+	const unsigned short indices[] =
+	{
+		0,1,2,
+		0,2,3,
+		0,4,1,
+		2,1,5
 	};
 
 	//Create buffer description descriptor
@@ -141,7 +159,7 @@ void Graphics::DrawTestTriangle()
 	data.pSysMem = vertices; //does this not need &?
 	
 
-	//Create Buffer ComPtr	
+	//Create Vertex Buffer ComPtr	
 	wrl::ComPtr<ID3D11Buffer> pVBuff;
 	//Create Buffer ComObj and fill pVBuff w/ it
 	GFX_THROW_INFO(pDevice->CreateBuffer(&desc, &data, &pVBuff));
@@ -150,6 +168,22 @@ void Graphics::DrawTestTriangle()
 	const UINT offset = 0u;
 	//Bind buffer to pipeline
 	pContext->IASetVertexBuffers(0u, 1u, pVBuff.GetAddressOf(), &stride, &offset);
+
+
+	//Repurpose values in desc and data descriptors for Index Buffer
+	desc.BindFlags = D3D11_BIND_FLAG::D3D11_BIND_INDEX_BUFFER;
+	desc.ByteWidth = sizeof(indices);
+	desc.CPUAccessFlags = 0u;
+	desc.MiscFlags = 0u;
+	desc.StructureByteStride = sizeof(unsigned short);
+	desc.Usage = D3D11_USAGE_DEFAULT;
+	data.pSysMem = indices; //Set data to index buffer content
+
+	//Create Indices Buffer ComPtr	
+	wrl::ComPtr<ID3D11Buffer> pIBuff;
+	GFX_THROW_INFO(pDevice->CreateBuffer(&desc, &data, &pIBuff));	
+	pContext->IASetIndexBuffer(pIBuff.Get(), DXGI_FORMAT_R16_UINT, 0u);
+
 
 	//Create pixel shader comobj
 	wrl::ComPtr<ID3D11PixelShader> pPixelShader;
@@ -194,6 +228,7 @@ void Graphics::DrawTestTriangle()
 		0,						//Aligned byte offset
 		D3D11_INPUT_PER_VERTEX_DATA, //Input slot class
 		0 },					//Instance data step rate
+		{"Colour", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 8u, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};	
 	GFX_THROW_INFO( pDevice->CreateInputLayout(
 		ied,
@@ -206,7 +241,9 @@ void Graphics::DrawTestTriangle()
 	pContext->IASetInputLayout(pInputLayout.Get());
 
 	//DRAW!!!
-	GFX_THROW_INFO_ONLY( pContext->Draw((UINT)std::size(vertices), 0u) );
+	GFX_THROW_INFO_ONLY( 
+		pContext->DrawIndexed((UINT)std::size(indices), 0u, 0) 
+	);
 }
 
 //####################################

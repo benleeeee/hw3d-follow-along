@@ -25,7 +25,7 @@ int App::Go()
 void App::DoFrame()
 {
 	const float c = sin(timer.Peek()) / 2.0f + 0.5f;
-	wnd.Gfx().ClearBuffer(c, c, c); //Clear buffer and set to colour
+	wnd.Gfx().ClearBuffer(0, 0, c); //Clear buffer and set to colour
 	wnd.Gfx().DrawTestTriangle();
 	wnd.Gfx().EndFrame(); //MUST call EndFrame to present backbuffer
 }
