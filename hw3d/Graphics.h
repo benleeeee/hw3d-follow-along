@@ -55,7 +55,7 @@ public:
 	~Graphics() = default; //c++ 11: specify to use compiler-generated destructor
 	void EndFrame(); //Present: flip back buffer
 	void ClearBuffer(float red, float green, float blue) noexcept;
-	void DrawTestTriangle(float angle);
+	void DrawTestTriangle(float angle, float x, float y);
 private:
 #ifndef NDEBUG
 	DxgiInfoManager infoManager; //Only include if building in debug mode 

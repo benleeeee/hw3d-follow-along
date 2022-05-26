@@ -6,7 +6,7 @@ struct VSOUT
 
 cbuffer CBuf
 {	
-	row_major matrix transform; //Matrix implies 4x4 by default
+	matrix transform; //Matrix implies 4x4 by default
 };
 
 VSOUT main(float2 pos : Position, float3 col : Colour)
