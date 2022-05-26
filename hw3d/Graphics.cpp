@@ -109,7 +109,7 @@ void Graphics::ClearBuffer(float red, float green, float blue) noexcept
 	pContext->ClearRenderTargetView(pTarget.Get(), colour);
 }
 
-void Graphics::DrawTestTriangle()
+void Graphics::DrawTestTriangle(float angle)
 {
 	namespace wrl = Microsoft::WRL;
 	HRESULT hr;
@@ -134,7 +134,7 @@ void Graphics::DrawTestTriangle()
 		{ -0.5f, -0.5f, 0, 0, 255, 0 },
 		{ -0.3f, 0.3f, 0, 255, 0, 0 },
 		{ 0.3f, 0.3f, 0,0, 255, 0 },
-		{ 0.0f, -0.8f, 255, 0, 0, 0 },
+		{ 0.0f, -1.0f, 255, 0, 0, 0 },
 	};
 	const unsigned short indices[] =
 	{
@@ -181,11 +181,49 @@ void Graphics::DrawTestTriangle()
 
 	//Create Indices Buffer ComPtr	
 	wrl::ComPtr<ID3D11Buffer> pIBuff;
-	GFX_THROW_INFO(pDevice->CreateBuffer(&desc, &data, &pIBuff));	
+	GFX_THROW_INFO(pDevice->CreateBuffer(&desc, &data, &pIBuff));		
+	//Bind index buffer
 	pContext->IASetIndexBuffer(pIBuff.Get(), DXGI_FORMAT_R16_UINT, 0u);
 
 
-	//Create pixel shader comobj
+	//Create constant buffer for transformation matrix
+	struct ConstantBuffer
+	{
+		struct
+		{
+			float element[4][4]; //4x4 matrix
+		} transformation;
+	};
+	float sinTheta = std::sin(angle);
+	float cosTheta = std::cos(angle);
+	const ConstantBuffer cb =
+	{
+		//Rotation matrix (z)
+		{
+			(3.0f / 4.0f) * cosTheta,	sinTheta,	0.0f, 0.0f,
+			(3.0f / 4.0f) * -sinTheta,	cosTheta,	0.0f, 0.0f,
+			0.0f,						0.0f,		1.0f, 0.0f,
+			0.0f,						0.0f,		0.0f, 1.0f
+		}
+	};
+	//Repurpose values in desc and data descriptors for Index Buffer
+	desc.BindFlags = D3D11_BIND_FLAG::D3D11_BIND_CONSTANT_BUFFER;
+	desc.ByteWidth = sizeof(cb);
+	desc.CPUAccessFlags = D3D10_CPU_ACCESS_WRITE;
+	desc.MiscFlags = 0u;
+	desc.StructureByteStride = 0u;
+	desc.Usage = D3D11_USAGE_DYNAMIC;
+	data.pSysMem = &cb; //Set data to constant buffer content
+	//Create constant buffer
+	wrl::ComPtr<ID3D11Buffer> pConstantBuffer;
+	pDevice->CreateBuffer(&desc, &data, &pConstantBuffer);
+
+	//Bind constant buffer to pipeline
+	pContext->VSSetConstantBuffers( 0u, 1u, pConstantBuffer.GetAddressOf() );
+
+
+
+	//Create pixel shader com obj
 	wrl::ComPtr<ID3D11PixelShader> pPixelShader;
 	wrl::ComPtr<ID3DBlob> pBlob; //bytecode file comObj
 	GFX_THROW_INFO(D3DReadFileToBlob(L"PixelShader.cso", &pBlob)); //simultaneously calls pBlob->release() in & opeartor
