@@ -64,6 +64,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11Device> pDevice; //Controls Windows setup for graphics hardware
 	Microsoft::WRL::ComPtr<IDXGISwapChain> pSwap; //Swapchain holds front/back buffer - DXGI layer includes things that don't change much over time, swap chain is solid theoretically and can't 'improve' or change much so is part of DXGI instead of a particular D3Dxx implementation
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> pContext; //Controls rendering & binding to pipeline
-	Microsoft::WRL::ComPtr <ID3D11RenderTargetView> pTarget; //Backbuffer resource - write new frames to this	
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> pTarget; //Backbuffer resource - write new frames to this
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> pDSV; //Depth stencil buffer for depth operations
 };
 

@@ -81,7 +81,41 @@ Graphics::Graphics(HWND hWnd)
 	//Gain access to texture subresource in swap chain (backbuffer)
 	Microsoft::WRL::ComPtr<ID3D11Resource> pBackBuffer; 
 	GFX_THROW_INFO( pSwap->GetBuffer(0, __uuidof(ID3D11Texture2D), &pBackBuffer) );
-	GFX_THROW_INFO( pDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &pTarget) );		
+	GFX_THROW_INFO( pDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &pTarget) );	
+
+	//Create and bind depth buffer state
+	D3D11_DEPTH_STENCIL_DESC dsDesc = {};
+	dsDesc.DepthEnable = TRUE;
+	dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	dsDesc.DepthFunc = D3D11_COMPARISON_LESS; // if z-value is less then it's closer so draw on top of render buffer
+	wrl::ComPtr<ID3D11DepthStencilState> pDSState;
+	GFX_THROW_INFO( pDevice->CreateDepthStencilState(&dsDesc, &pDSState) );
+	//bind depth buffer state to output merger
+	pContext->OMSetDepthStencilState(pDSState.Get(), 1u);
+
+	//Create and bind depth buffer texture
+	wrl::ComPtr<ID3D11Texture2D> pDepthStencil;
+	D3D11_TEXTURE2D_DESC descDepth = {};
+	descDepth.Width = 800u;	//Match width/height to swap chain dimensions
+	descDepth.Height = 600u;
+	descDepth.MipLevels = 1u;
+	descDepth.ArraySize = 1u; //Single texture stored (it's possible to store an array of textures)
+	descDepth.Format = DXGI_FORMAT_D32_FLOAT; //special DXGI format for "Depth 32-bit float" = D32
+	descDepth.SampleDesc.Count = 1u; //for anti-aliasing
+	descDepth.SampleDesc.Quality = 0u; //also for anti-aliasing
+	descDepth.Usage = D3D11_USAGE_DEFAULT;
+	descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL; //specify binding for depth buffer
+	GFX_THROW_INFO( pDevice->CreateTexture2D(&descDepth, nullptr, &pDepthStencil) );	//Empty texture data (depth info is generated per frame)
+	
+	//Need to get a view on the depth texture to bind it to the pipeline, but this should be maintained as graphics class member
+	D3D11_DEPTH_STENCIL_VIEW_DESC descDSV = {};
+	descDSV.Format = DXGI_FORMAT_D32_FLOAT;
+	descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	descDSV.Texture2D.MipSlice = 0u;	
+	GFX_THROW_INFO( pDevice->CreateDepthStencilView(pDepthStencil.Get(), &descDSV, &pDSV) );
+
+	//Bind depth stencil view to output merger
+	pContext->OMSetRenderTargets( 1u, pTarget.GetAddressOf(), pDSV.Get() );
 }
 
 
@@ -110,9 +144,11 @@ void Graphics::ClearBuffer(float red, float green, float blue) noexcept
 	const float colour[] = { red, green, blue, 1.0f };
 	//Clear render target (backbuffer) into an RGB colour using Context which controls rendering
 	pContext->ClearRenderTargetView(pTarget.Get(), colour);
+	//Also need to clear depth buffer every frame
+	pContext->ClearDepthStencilView(pDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);
 }
 
-void Graphics::DrawTestTriangle(float angle, float x, float y)
+void Graphics::DrawTestTriangle(float angle, float x, float z)
 {
 	namespace wrl = Microsoft::WRL;
 	HRESULT hr;
@@ -122,29 +158,28 @@ void Graphics::DrawTestTriangle(float angle, float x, float y)
 		struct {
 			float x;
 			float y;
-		} pos;
-		struct {
-			unsigned char r;
-			unsigned char g;
-			unsigned char b;
-			unsigned char a;
-		} colour;
+			float z;
+		} pos;				
 	};
 	Vertex vertices[] =
 	{
-		{ 0.0f, 0.5f, 255, 0, 0, 0 },
-		{ 0.5f, -0.5f, 0, 255, 0, 0 },
-		{ -0.5f, -0.5f, 0, 0, 255, 0 },
-		{ -0.3f, 0.3f, 0, 255, 0, 0 },
-		{ 0.3f, 0.3f, 0,0, 255, 0 },
-		{ 0.0f, -1.0f, 255, 0, 0, 0 },
+		{ -1.0f,	-1.0f, -1.0f },//,	0 },
+		{  1.0f,	-1.0f, -1.0f },//,	0 },
+		{ -1.0f,	 1.0f, -1.0f },//,	0 },
+		{  1.0f,	 1.0f, -1.0f },//,	0 },
+		{ -1.0f,	-1.0f,  1.0f },//,	0 },
+		{  1.0f,	-1.0f,  1.0f },//,	0 },
+		{ -1.0f,	 1.0f,  1.0f },//,	0 },
+		{  1.0f,	 1.0f,  1.0f },//,	0 },
 	};
 	const unsigned short indices[] =
 	{
-		0,1,2,
-		0,2,3,
-		0,4,1,
-		2,1,5
+		0,2,1, 2,3,1,
+		1,3,5, 3,7,5,
+		2,6,3, 3,6,7,
+		4,5,7, 4,7,6,
+		0,4,2, 2,4,6,
+		0,1,4, 1,5,4
 	};
 
 	//Create buffer description descriptor
@@ -202,15 +237,16 @@ void Graphics::DrawTestTriangle(float angle, float x, float y)
 		{
 			dx::XMMatrixTranspose(				
 				dx::XMMatrixRotationZ(angle) *
-				dx::XMMatrixScaling(3.0f / 4.0f, 1.0f, 1.0f) *
-				dx::XMMatrixTranslation(x, y, 0.0f)
+				dx::XMMatrixRotationX(angle) *
+				dx::XMMatrixTranslation(x, 0.0f, z + 4.0f) *
+				dx::XMMatrixPerspectiveLH( 1.0f, 3.0f/4.0f, 0.5f, 10.0f) //Perspective correction now there's depth!
 			)
 		}
 	};
 	//Repurpose values in desc and data descriptors for Index Buffer
 	desc.BindFlags = D3D11_BIND_FLAG::D3D11_BIND_CONSTANT_BUFFER;
 	desc.ByteWidth = sizeof(cb);
-	desc.CPUAccessFlags = D3D10_CPU_ACCESS_WRITE;
+	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	desc.MiscFlags = 0u;
 	desc.StructureByteStride = 0u;
 	desc.Usage = D3D11_USAGE_DYNAMIC;
@@ -224,6 +260,43 @@ void Graphics::DrawTestTriangle(float angle, float x, float y)
 
 
 
+	struct ConstantBuffer2
+	{
+		struct
+		{
+			float r;
+			float g;
+			float b;
+			float a;
+		} face_colours[6];
+	};
+	const ConstantBuffer2 cb2 =
+	{
+		{
+			{1.0f,	0.0f,	1.0f},
+			{1.0f,	0.0f,	0.0f},
+			{0.0f,	1.0f,	0.0f},
+			{0.0f,	0.0f,	1.0f},
+			{1.0f,	1.0f,	0.0f},
+			{0.0f,	1.0f,	1.0f}
+		}
+	};
+	//Repurpose values in desc and data descriptors for face colour buffer
+	desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	desc.Usage = D3D11_USAGE_DEFAULT;
+	desc.CPUAccessFlags = 0u;
+	desc.MiscFlags = 0u;
+	desc.ByteWidth = sizeof(cb2);
+	desc.StructureByteStride = 0u; //I thought this would be (4*4u) 16u? that's side size of one face_colour w/ 4 floats
+	data.pSysMem = &cb2;
+	//Create constant buffer
+	wrl::ComPtr<ID3D11Buffer> pFaceColourBuff;
+	GFX_THROW_INFO( pDevice->CreateBuffer(&desc, &data, &pFaceColourBuff) );
+
+	//Bind constant buffer to pixel shader
+	pContext->PSSetConstantBuffers(0u, 1u, pFaceColourBuff.GetAddressOf());
+
+
 	//Create pixel shader com obj
 	wrl::ComPtr<ID3D11PixelShader> pPixelShader;
 	wrl::ComPtr<ID3DBlob> pBlob; //bytecode file comObj
@@ -231,8 +304,7 @@ void Graphics::DrawTestTriangle(float angle, float x, float y)
 	GFX_THROW_INFO(pDevice->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &pPixelShader));
 	//Bind pixel shader to pipeline
 	pContext->PSSetShader(pPixelShader.Get(), nullptr, 0u);
-	//Bind render target
-	pContext->OMSetRenderTargets(1u, pTarget.GetAddressOf(), nullptr);
+	
 
 	//Create vertex shader comobj
 	wrl::ComPtr<ID3D11VertexShader> pVertexShader;
@@ -262,12 +334,11 @@ void Graphics::DrawTestTriangle(float angle, float x, float y)
 	{		
 		{"Position",			//Semantic name
 		0,						//Semantic index
-		DXGI_FORMAT_R32G32_FLOAT, //Format (two 32bit floats for x,y)
+		DXGI_FORMAT_R32G32B32_FLOAT, //Format (three 32bit floats for x,y,z)
 		0,						//Input slot
 		0,						//Aligned byte offset
 		D3D11_INPUT_PER_VERTEX_DATA, //Input slot class
-		0 },					//Instance data step rate
-		{"Colour", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 8u, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+		0 },					//Instance data step rate		
 	};	
 	GFX_THROW_INFO( pDevice->CreateInputLayout(
 		ied,
