@@ -7,7 +7,7 @@ class App
 {
 public:
 	App();
-	//~App(); Don't need a constructor, it won't be destroyed until whole app is closed?
+	~App(); //Don't need a constructor, it won't be destroyed until whole app is closed?
 
 	//master frame / message loop
 	int Go();
@@ -17,4 +17,5 @@ private:
 private:
 	Window wnd;
 	ChiliTimer timer; 
+	std::vector<std::unique_ptr<class Box>> boxes;
 };

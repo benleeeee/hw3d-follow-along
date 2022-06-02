@@ -77,9 +77,3 @@ private:
 	HWND hWnd;	//WinAPI window class
 	std::unique_ptr<Graphics> pGfx; //bc unique ptr when Window is destroyed pGfx is guaranteed destroyed
 };
-
-
-// error exception helper macro that gets the file and line number for exceptions
-#define CHWND_EXCEPT(hr) Window::HrException(__LINE__, __FILE__, (hr))
-#define CHWND_LAST_EXCEPT() Window::HrException( __LINE__,__FILE__,GetLastError() ) //Some windows don't throw errors, so use GetLastError 
-#define CHWND_NOGFX_EXCEPT() Window::NoGfxException( __LINE__,__FILE__ )
