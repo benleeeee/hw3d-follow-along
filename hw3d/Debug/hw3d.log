@@ -1,2 +1,32 @@
-﻿  App.cpp
+﻿  compilation object save succeeded; see C:\Users\Ben Lee\repos\hw3d follow along\Debug\ColorBlendPS.cso
+  compilation object save succeeded; see C:\Users\Ben Lee\repos\hw3d follow along\Debug\ColorBlendVS.cso
+  compilation object save succeeded; see C:\Users\Ben Lee\repos\hw3d follow along\Debug\ColorIndexPS.cso
+  compilation object save succeeded; see C:\Users\Ben Lee\repos\hw3d follow along\Debug\ColorIndexVS.cso
+  compilation object save succeeded; see C:\Users\Ben Lee\repos\hw3d follow along\hw3d\PixelShader.cso
+  compilation object save succeeded; see C:\Users\Ben Lee\repos\hw3d follow along\hw3d\VertexShader.cso
+  App.cpp
+  Bindable.cpp
+  Box.cpp
+  ChiliException.cpp
+  ChiliTimer.cpp
+  Drawable.cpp
+  dxerr.cpp
+  DxgiInfoManager.cpp
+  Graphics.cpp
+  IndexBuffer.cpp
+  InputLayout.cpp
+c:\users\ben lee\repos\hw3d follow along\hw3d\dxgiinfomanager.cpp(12): warning C4005: 'GFX_THROW_NOINFO': macro redefinition
+  c:\users\ben lee\repos\hw3d follow along\hw3d\graphicsthrowmacros.h(6): note: see previous definition of 'GFX_THROW_NOINFO' (compiling source file DxgiInfoManager.cpp)
+  Keyboard.cpp
+  Melon.cpp
+  Mouse.cpp
+  PixelShader.cpp
+  Pyramid.cpp
+  Topology.cpp
+  TransformCbuf.cpp
+  VertexBuffer.cpp
+  VertexShader.cpp
+  Window.cpp
+  WindowsMessageMap.cpp
+  WinMain.cpp
   hw3d.vcxproj -> C:\Users\Ben Lee\repos\hw3d follow along\Debug\hw3d.exe
