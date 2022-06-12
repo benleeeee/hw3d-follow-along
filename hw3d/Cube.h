@@ -31,7 +31,9 @@ public:
 		}
 		return
 		{
-			//Return the indexed triangle list using std::move
+			//Return two things using std::move::
+			//the vector of vertices (of templated type)
+			//AND the indexed triangle list (index buffer)
 			std::move( verts ),
 			{
 				0,2,1, 2,3,1,
