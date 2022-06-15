@@ -108,6 +108,9 @@
     <ClCompile Include="Pyramid.cpp">
       <Filter>Source Files\Drawable</Filter>
     </ClCompile>
+    <ClCompile Include="Door.cpp">
+      <Filter>Source Files\Drawable</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="WindowsMessageMap.h">
@@ -216,6 +219,9 @@
       <Filter>Header Files\Drawable</Filter>
     </ClInclude>
     <ClInclude Include="Pyramid.h">
+      <Filter>Header Files\Drawable</Filter>
+    </ClInclude>
+    <ClInclude Include="Door.h">
       <Filter>Header Files\Drawable</Filter>
     </ClInclude>
   </ItemGroup>

@@ -2,6 +2,7 @@
 #include  "Melon.h"
 #include "Pyramid.h"
 #include "Box.h"
+#include "Door.h"
 //#include <iomanip>
 #include <memory>
 #include <algorithm>
@@ -24,17 +25,23 @@ App::App()
 			switch (typedist(rng))
 			{
 			case 0:
-				return std::make_unique<Pyramid>(
+				return std::make_unique<Door>(
+					gfx, rng, adist, ddist, odist, rdist, bdist );
+				/*return std::make_unique<Pyramid>(
 					gfx, rng, adist, ddist, odist, rdist
-				);
+				);*/
 			case 1:
-				return std::make_unique<Box>(
+				return std::make_unique<Door>( 
+					gfx, rng, adist, ddist, odist, rdist, bdist );
+				/*return std::make_unique<Box>(
 					gfx, rng, adist, ddist, odist, rdist, bdist
-				);
+				);*/
 			case 2:
-				return std::make_unique<Melon>(
+				return std::make_unique<Door>( 
+					gfx, rng, adist, ddist, odist, rdist, bdist );
+				/*return std::make_unique<Melon>(
 					gfx, rng, adist, ddist, odist, rdist, longdist, latdist
-				);
+				);*/
 			default:
 				assert(false && "bad drawable type in factory");
 				return {};
