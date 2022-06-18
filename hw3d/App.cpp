@@ -11,6 +11,9 @@
 #include "ChiliMath.h"
 #include "Surface.h"
 #include "GDIPlusManager.h"
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_win32.h"
+#include "imgui/imgui_impl_dx11.h"
 
 GDIPlusManager gdipm; //Declare an instance so it Initialises GDIPlusManager
 
@@ -96,6 +99,22 @@ void App::DoFrame()
 		b->Update(wnd.kbd.KeyIsPressed( VK_SPACE ) ? 0.0f : dt); //Update while space is held
 		b->Draw(wnd.Gfx());
 	}
+
+	//ImGui stuff
+	ImGui_ImplDX11_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+
+	static bool show_demo_window = true;
+	if (show_demo_window)
+	{
+		ImGui::ShowDemoWindow( &show_demo_window );
+	}
+	ImGui::Render();
+	ImGui_ImplDX11_RenderDrawData( ImGui::GetDrawData() ); //Translates internal data struct of draw data into platform specific render, i.e. DX11 in this case
+
+
+	//Present screen
 	wnd.Gfx().EndFrame(); //MUST call EndFrame to present backbuffer
 }
 

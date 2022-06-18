@@ -1,7 +1,27 @@
+/******************************************************************************************
+*	Chili Direct3D Engine																  *
+*	Copyright 2018 PlanetChili <http://www.planetchili.net>								  *
+*																						  *
+*	This file is part of Chili Direct3D Engine.											  *
+*																						  *
+*	Chili Direct3D Engine is free software: you can redistribute it and/or modify		  *
+*	it under the terms of the GNU General Public License as published by				  *
+*	the Free Software Foundation, either version 3 of the License, or					  *
+*	(at your option) any later version.													  *
+*																						  *
+*	The Chili Direct3D Engine is distributed in the hope that it will be useful,		  *
+*	but WITHOUT ANY WARRANTY; without even the implied warranty of						  *
+*	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the						  *
+*	GNU General Public License for more details.										  *
+*																						  *
+*	You should have received a copy of the GNU General Public License					  *
+*	along with The Chili Direct3D Engine.  If not, see <http://www.gnu.org/licenses/>.    *
+******************************************************************************************/
 #include "Window.h"
 #include <sstream>
 #include "resource.h"
 #include "WindowsThrowMacros.h"
+#include "imgui/imgui_impl_win32.h"
 
 //Window Class stuff
 Window::WindowClass Window::WindowClass::wndClass; //Singleton instance(?)
@@ -85,12 +105,17 @@ Window::Window(int width, int height, const char * name)
 	}
 	//newly created windows start off as hidden
 	ShowWindow(hWnd, SW_SHOWDEFAULT);
+
+	//Create ImGui Win32 implementation
+	ImGui_ImplWin32_Init( hWnd );
+	
 	//Create graphics object
 	pGfx = std::make_unique<Graphics>(hWnd);
 }
 
 Window::~Window()
 {
+	ImGui_ImplWin32_Shutdown( );
 	DestroyWindow(hWnd);
 }
 
@@ -138,6 +163,13 @@ LRESULT Window::HandleMsgThunk(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 //Due to the other two HandleMsg... functions acting as workarounds, we can now access all of the member data of window
 LRESULT Window::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
 {
+	//Try handling messages through ImGui implementation first 
+	if (ImGui_ImplWin32_WndProcHandler( hWnd, msg, wParam, lParam ))
+	{
+		return true;
+	}
+
+	//Otherwise handle msgs internally
 	switch (msg)
 	{
 	case WM_CLOSE:
