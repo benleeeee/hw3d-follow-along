@@ -5,6 +5,7 @@
 #include <cmath>
 #include <DirectXMath.h>
 #include "GraphicsThrowMacros.h"
+#include "imgui/imgui_impl_win32.h"
 #include "imgui/imgui_impl_dx11.h"
 
 namespace wrl = Microsoft::WRL;
@@ -119,6 +120,13 @@ Graphics::Graphics(HWND hWnd)
 
 void Graphics::EndFrame()
 {
+	//imgui frame end
+	if (imguiEnabled)
+	{
+		ImGui::Render();
+		ImGui_ImplDX11_RenderDrawData( ImGui::GetDrawData() );
+	}
+
 	HRESULT hr;
 #ifndef NDEBUG
 	infoManager.Set();
@@ -137,8 +145,14 @@ void Graphics::EndFrame()
 	}
 }
 
-void Graphics::ClearBuffer(float red, float green, float blue) noexcept
+void Graphics::BeginFrame(float red, float green, float blue) noexcept
 {
+	if (imguiEnabled)
+	{
+		ImGui_ImplDX11_NewFrame();
+		ImGui_ImplWin32_NewFrame();
+		ImGui::NewFrame();
+	}
 	const float colour[] = { red, green, blue, 1.0f };
 	//Clear render target (backbuffer) into an RGB colour using Context which controls rendering
 	pContext->ClearRenderTargetView(pTarget.Get(), colour);
@@ -162,6 +176,21 @@ void Graphics::SetProjection(DirectX::FXMMATRIX proj) noexcept
 DirectX::XMMATRIX Graphics::GetProjection() const noexcept
 {
 	return projection;
+}
+
+void Graphics::EnableImgui() noexcept
+{
+	imguiEnabled = true;
+}
+
+void Graphics::DisableImgui() noexcept
+{
+	imguiEnabled = false;
+}
+
+bool Graphics::IsImGuiEnabled() const noexcept
+{
+	return imguiEnabled;
 }
 
 

@@ -1,2 +1,34 @@
-﻿  Sampler.cpp
+﻿  App.cpp
+  Bindable.cpp
+  Box.cpp
+  Door.cpp
+  Drawable.cpp
+  DxgiInfoManager.cpp
+  Graphics.cpp
+  IndexBuffer.cpp
+c:\users\ben lee\repos\hw3d follow along\hw3d\dxgiinfomanager.cpp(12): warning C4005: 'GFX_THROW_NOINFO': macro redefinition
+  c:\users\ben lee\repos\hw3d follow along\hw3d\graphicsthrowmacros.h(6): note: see previous definition of 'GFX_THROW_NOINFO' (compiling source file DxgiInfoManager.cpp)
+  InputLayout.cpp
+  Melon.cpp
+  PixelShader.cpp
+  Pyramid.cpp
+  Sampler.cpp
+  Sheet.cpp
+  SkinnedBox.cpp
+  Texture.cpp
+  Topology.cpp
+c:\users\ben lee\repos\hw3d follow along\hw3d\plane.h(52): warning C4018: '<': signed/unsigned mismatch (compiling source file Sheet.cpp)
+  c:\users\ben lee\repos\hw3d follow along\hw3d\plane.h(73): note: see reference to function template instantiation 'IndexedTriangleList<Sheet::{ctor}::Vertex> Plane::MakeTesselated<V>(int,int)' being compiled
+          with
+          [
+              V=Sheet::{ctor}::Vertex
+          ] (compiling source file Sheet.cpp)
+  c:\users\ben lee\repos\hw3d follow along\hw3d\sheet.cpp(41): note: see reference to function template instantiation 'IndexedTriangleList<Sheet::{ctor}::Vertex> Plane::Make<Sheet::{ctor}::Vertex>(void)' being compiled
+c:\users\ben lee\repos\hw3d follow along\hw3d\plane.h(54): warning C4018: '<': signed/unsigned mismatch (compiling source file Sheet.cpp)
+  TransformCbuf.cpp
+  VertexBuffer.cpp
+  VertexShader.cpp
+  WinMain.cpp
+  Window.cpp
+  imgui_impl_dx11.cpp
   hw3d.vcxproj -> C:\Users\Ben Lee\repos\hw3d follow along\Debug\hw3d.exe

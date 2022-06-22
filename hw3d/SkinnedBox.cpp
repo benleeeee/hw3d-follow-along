@@ -4,6 +4,7 @@
 #include "Cube.h"
 #include "Surface.h"
 #include "Texture.h"
+#include "Sampler.h"
 
 SkinnedBox::SkinnedBox( Graphics& gfx, std::mt19937& rng, std::uniform_real_distribution<float>& adist, std::uniform_real_distribution<float>& ddist, std::uniform_real_distribution<float>& odist, std::uniform_real_distribution<float>& rdist )
 	:
@@ -33,6 +34,7 @@ SkinnedBox::SkinnedBox( Graphics& gfx, std::mt19937& rng, std::uniform_real_dist
 		const auto model = Cube::MakeSkinned<Vertex>();
 
 		AddStaticBind( std::make_unique<VertexBuffer>( gfx, model.vertices ) );
+		AddStaticBind( std::make_unique<Sampler>( gfx ) );
 		AddStaticIndexBuffer( std::make_unique<IndexBuffer>( gfx, model.indices ) );
 		AddStaticBind( std::make_unique<Texture>( gfx, Surface::FromFile( "Images\\cube.png" ) ) );
 

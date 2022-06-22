@@ -59,11 +59,15 @@ public:
 	Graphics& operator=(const Graphics&) = delete; //No = operator
 	~Graphics() = default; //c++ 11: specify to use compiler-generated destructor
 	void EndFrame(); //Present: flip back buffer
-	void ClearBuffer(float red, float green, float blue) noexcept;
+	void BeginFrame(float red, float green, float blue) noexcept;
 	void DrawIndexed(UINT count) noexcept(!IS_DEBUG);
 	void SetProjection(DirectX::FXMMATRIX proj) noexcept;
 	DirectX::XMMATRIX GetProjection() const noexcept;
+	void EnableImgui() noexcept;
+	void DisableImgui() noexcept;
+	bool IsImGuiEnabled() const noexcept;
 private:
+	bool imguiEnabled = true;
 	DirectX::XMMATRIX projection;
 #ifndef NDEBUG
 	DxgiInfoManager infoManager; //Only include if building in debug mode 
