@@ -92,16 +92,8 @@ App::App()
 void App::DoFrame()
 {
 	//Tick
-	const auto dt = timer.Mark();	
-
-	if (wnd.kbd.KeyIsPressed( VK_SPACE ))
-	{
-		wnd.Gfx().DisableImgui();
-	}
-	else
-	{
-		wnd.Gfx().EnableImgui();
-	}
+	const auto dt = timer.Mark();		
+	
 	wnd.Gfx().BeginFrame( 0.07f, 0.0f, 0.12f );
 
 	//Draw drawables	
@@ -112,10 +104,19 @@ void App::DoFrame()
 	}
 	
 	//Draw ImGui (draw data set up in graphics.cpp)
-	if (show_demo_window)
+	if (wnd.kbd.KeyIsPressed( VK_SPACE ))
 	{
-		ImGui::ShowDemoWindow( &show_demo_window );
+		wnd.Gfx().DisableImgui();
 	}
+	else
+	{
+		wnd.Gfx().EnableImgui();
+		if (show_demo_window)
+		{
+			ImGui::ShowDemoWindow( &show_demo_window );
+		}
+	}
+	
 
 	
 	//Present screen

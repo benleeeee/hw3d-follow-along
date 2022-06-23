@@ -117,7 +117,7 @@ Graphics::Graphics(HWND hWnd)
 	ImGui_ImplDX11_Init( pDevice.Get(), pContext.Get() );
 }
 
-
+   
 void Graphics::EndFrame()
 {
 	//imgui frame end
@@ -147,10 +147,11 @@ void Graphics::EndFrame()
 
 void Graphics::BeginFrame(float red, float green, float blue) noexcept
 {
+	//imgui stuff
 	if (imguiEnabled)
 	{
 		ImGui_ImplDX11_NewFrame();
-		ImGui_ImplWin32_NewFrame();
+		ImGui_ImplWin32_NewFrame();		
 		ImGui::NewFrame();
 	}
 	const float colour[] = { red, green, blue, 1.0f };
