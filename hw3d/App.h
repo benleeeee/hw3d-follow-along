@@ -1,8 +1,8 @@
 #pragma once
 #include "Window.h"
-#include <sstream>
 #include "ChiliTimer.h"
 #include "ImguiManager.h"
+#include "Camera.h"
 
 class App
 {
@@ -20,6 +20,7 @@ private:
 	Window wnd;
 	ChiliTimer timer; 
 	std::vector<std::unique_ptr<class Drawable>> drawables;
-	bool show_demo_window = true;
+	float sim_speed = 1.0f;
+	Camera cam;
 	static constexpr size_t nDrawables = 180;
 };

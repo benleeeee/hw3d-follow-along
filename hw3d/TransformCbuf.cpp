@@ -16,7 +16,7 @@ void TransformCbuf::Bind(Graphics& gfx) noexcept
 {
 	pVcbuf->Update(gfx,
 		DirectX::XMMatrixTranspose(	//Need to make sure it's transposed or matrix will be wrong
-			parent.GetTransformXM() * gfx.GetProjection()
+			parent.GetTransformXM() * gfx.GetCamera() * gfx.GetProjection()
 		)
 	);
 	pVcbuf->Bind(gfx);

@@ -13,24 +13,25 @@
 #include "GDIPlusManager.h"
 #include "imgui/imgui.h"
 
+namespace dx = DirectX;
 
 GDIPlusManager gdipm; //Declare an instance so it Initialises GDIPlusManager
 
 App::App()
 	:
-	wnd(800, 600, "My Window") //Initialise the window w/ the app 
+	wnd( 800, 600, "My Window" ) //Initialise the window w/ the app 
 {
 	class Factory
 	{
 	public:
-		Factory(Graphics& gfx)
+		Factory( Graphics& gfx )
 			:
-			gfx(gfx)
+			gfx( gfx )
 		{}
 		//() constructor operator overload - picks a random shape
 		std::unique_ptr<Drawable> operator()()
 		{
-			switch (typedist(rng))
+			switch (typedist( rng ))
 			{
 			case 0:
 				return std::make_unique<Door>(
@@ -39,13 +40,13 @@ App::App()
 					gfx, rng, adist, ddist, odist, rdist
 				);*/
 			case 1:
-				return std::make_unique<Door>( 
+				return std::make_unique<Door>(
 					gfx, rng, adist, ddist, odist, rdist, bdist );
 				/*return std::make_unique<Box>(
 					gfx, rng, adist, ddist, odist, rdist, bdist
 				);*/
 			case 2:
-				return std::make_unique<Door>( 
+				return std::make_unique<Door>(
 					gfx, rng, adist, ddist, odist, rdist, bdist );
 				/*return std::make_unique<Melon>(
 					gfx, rng, adist, ddist, odist, rdist, longdist, latdist
@@ -61,7 +62,7 @@ App::App()
 					odist, rdist
 					);
 			default:
-				assert(false && "bad drawable type in factory");
+				assert( false && "bad drawable type in factory" );
 				return {};
 			}
 		}
@@ -79,22 +80,24 @@ App::App()
 	};
 
 	//Create factory
-	Factory f(wnd.Gfx());
+	Factory f( wnd.Gfx() );
 	//Reserve space for max amount of drawables in scene
-	drawables.reserve(nDrawables);
+	drawables.reserve( nDrawables );
 	//Call factory to generate max amount and fill drawables vector
-	std::generate_n(std::back_inserter(drawables), nDrawables, f);	
+	std::generate_n( std::back_inserter( drawables ), nDrawables, f );
 
 	//Set camera projection
-	wnd.Gfx().SetProjection( DirectX::XMMatrixPerspectiveLH( 1.0f,3.0f / 4.0f,0.5f,40.0f ) );
+	wnd.Gfx().SetProjection( dx::XMMatrixPerspectiveLH( 1.0f, 3.0f / 4.0f, 0.5f, 40.0f ) );
+	wnd.Gfx().SetCamera( dx::XMMatrixTranslation( 0.0f, 0.0f, -20.0f ) );
 }
 
 void App::DoFrame()
 {
 	//Tick
-	const auto dt = timer.Mark();		
-	
+	const auto dt = timer.Mark() * sim_speed;
+
 	wnd.Gfx().BeginFrame( 0.07f, 0.0f, 0.12f );
+	wnd.Gfx().SetCamera( cam.GetMatrix() );
 
 	//Draw drawables	
 	for (auto& b : drawables)
@@ -102,23 +105,21 @@ void App::DoFrame()
 		b->Update( wnd.kbd.KeyIsPressed( VK_SPACE ) ? 0.0f : dt ); //Update while space is held
 		b->Draw( wnd.Gfx() );
 	}
-	
-	//Draw ImGui (draw data set up in graphics.cpp)
-	if (wnd.kbd.KeyIsPressed( VK_SPACE ))
-	{
-		wnd.Gfx().DisableImgui();
-	}
-	else
-	{
-		wnd.Gfx().EnableImgui();
-		if (show_demo_window)
-		{
-			ImGui::ShowDemoWindow( &show_demo_window );
-		}
-	}
-	
 
-	
+	//Draw ImGui (draw data set up in graphics.cpp)
+	static char buffer[1024];
+	if (ImGui::Begin( "Simulation Speed" ))
+	{
+		ImGui::SliderFloat( "Speed Factor", &sim_speed, 0.0f, 4.0f );
+		ImGui::Text( "Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate );
+		ImGui::Text( "Status: %s", wnd.kbd.KeyIsPressed( VK_SPACE ) ? "PAUSED" : "RUNNING (hold spacebar to pause)" );
+	}
+	ImGui::End();
+	//ImGui window to control camera
+	cam.SpawnControlWindow();
+
+
+
 	//Present screen
 	wnd.Gfx().EndFrame(); //MUST call EndFrame to present backbuffer
 }
